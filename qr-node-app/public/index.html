@@ -131,31 +131,30 @@
     let html5QrcodeScanner;
     let currentCameraId = null;
 
-    // ฟังก์ชันเช็ค hash
-    async function checkHash(hash) {
-      try {
-        const res = await fetch("/check-hash", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hash })
-        });
-        const data = await res.json();
-        const resultDiv = document.getElementById("result");
+  async function checkHash(hash) {
+  try {
+    const res = await fetch("/api/check-hash", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hash })
+    });
+    const data = await res.json();
+    const resultDiv = document.getElementById("result");
 
-        if (data.found) {
-          resultDiv.className = "found";
-          resultDiv.innerHTML = `✅ <span style="font-size:2.2rem">${data.message}</span>`;
-        } else {
-          resultDiv.className = "not-found";
-          resultDiv.innerHTML = `❌ ไม่พบข้อมูล`;
-        }
-      } catch (err) {
-        console.error(err);
-        const resultDiv = document.getElementById("result");
-        resultDiv.className = "not-found";
-        resultDiv.innerHTML = "เกิดข้อผิดพลาด";
-      }
+    if (data.found) {
+      resultDiv.className = "found";
+      resultDiv.innerHTML = `<span style="font-size:2.5rem">${data.message}</span>`;
+    } else {
+      resultDiv.className = "not-found";
+      resultDiv.innerHTML = `-`;
     }
+  } catch (err) {
+    console.error(err);
+    const resultDiv = document.getElementById("result");
+    resultDiv.className = "not-found";
+    resultDiv.innerHTML = "เกิดข้อผิดพลาด";
+  }
+}
 
     // ฟังก์ชัน scan สำเร็จ
     function onScanSuccess(decodedText, decodedResult) {
