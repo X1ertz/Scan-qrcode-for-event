@@ -1,163 +1,61 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scan QR Code</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
   <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(to bottom, #005d17, #00d00b);
-      color: #fff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    header {
-      padding: 1rem;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
-    }
-
-    #reader {
-      width: 90vw;
-      max-width: 400px;
-      height: 400px;
-      margin: 1rem auto;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      background: #fff;
-    }
-
-    #controls {
-      margin: 1rem 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    select, button {
-      padding: 0.6rem 1rem;
-      border-radius: 12px;
-      border: none;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    select {
-      min-width: 200px;
-    }
-
-    button:hover, select:hover {
-      transform: scale(1.05);
-    }
-
-    button.start {
-      background-color: #a6a300;
-      color: #fff;
-    }
-
-    button.stop {
-      background-color: #dc3545;
-      color: #fff;
-    }
-
-    #result {
-      margin-top: 1rem;
-      font-size: 2rem;
-      font-weight: 700;
-      padding: 1.5rem 2rem;
-      border-radius: 16px;
-      text-align: center;
-      max-width: 90vw;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-      background: rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
-
-    #result.found {
-      background: #28a745;
-      color: #fff;
-      transform: scale(1.05);
-    }
-
-    #result.not-found {
-      background: #dc3545;
-      color: #fff;
-      transform: scale(1.05);
-    }
-
-    @media (max-width: 480px) {
-      #reader { height: 300px; }
-      #result { font-size: 1.5rem; padding: 1rem 1.5rem; }
-      select, button { font-size: 0.9rem; }
-    }
+    #result.found { color: green; font-weight: bold; }
+    #result.not-found { color: red; font-weight: bold; }
+    #reader { width: 400px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
   <header>
     <h1>Scan QR Code</h1>
-    <p>Scan for check your attendance</p>
+    <p>Scan to check your attendance</p>
   </header>
 
   <div id="reader"></div>
 
   <div id="controls">
+    <label>Camera: </label>
     <select id="cameraSelect"></select>
-    <div>
-      <button id="startBtn" class="start">Start</button>
-      <button id="stopBtn" class="stop">Stop</button>
-    </div>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Stop</button>
   </div>
 
   <div id="result">No result</div>
 
   <script>
-    let html5QrcodeScanner;
+    let html5QrcodeScanner = null;
     let currentCameraId = null;
 
-  async function checkHash(hash) {
-  try {
-    const res = await fetch("/api/check-hash", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hash })
-    });
-    const data = await res.json();
-    const resultDiv = document.getElementById("result");
-
-    if (data.found) {
-      resultDiv.className = "found";
-      resultDiv.innerHTML = `<span style="font-size:2.5rem">${data.message}</span>`;
-    } else {
-      resultDiv.className = "not-found";
-      resultDiv.innerHTML = `-`;
+    async function checkHash(hash) {
+      try {
+        const res = await fetch("/api/check-hash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hash })
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById("result");
+        if (data.found) {
+          resultDiv.className = "found";
+          resultDiv.innerHTML = `<span style="font-size:1.5rem">${data.message}</span>`;
+        } else {
+          resultDiv.className = "not-found";
+          resultDiv.innerHTML = "-";
+        }
+      } catch (err) {
+        console.error(err);
+        const resultDiv = document.getElementById("result");
+        resultDiv.className = "not-found";
+        resultDiv.innerHTML = "เกิดข้อผิดพลาด";
+      }
     }
-  } catch (err) {
-    console.error(err);
-    const resultDiv = document.getElementById("result");
-    resultDiv.className = "not-found";
-    resultDiv.innerHTML = "เกิดข้อผิดพลาด";
-  }
-}
 
-    // ฟังก์ชัน scan สำเร็จ
-    function onScanSuccess(decodedText, decodedResult) {
+    function onScanSuccess(decodedText) {
       console.log("Scanned:", decodedText);
       checkHash(decodedText);
     }
@@ -166,7 +64,7 @@
       // console.warn(error);
     }
 
-    // ดึงรายการกล้อง
+    // ดึงกล้องทั้งหมด
     Html5Qrcode.getCameras().then(cameras => {
       const select = document.getElementById("cameraSelect");
       cameras.forEach(cam => {
@@ -175,34 +73,38 @@
         option.text = cam.label || cam.id;
         select.appendChild(option);
       });
-      if(cameras.length > 0){
-        currentCameraId = cameras[0].id;
-      }
-    }).catch(err => console.error(err));
+      if(cameras.length > 0) currentCameraId = cameras[0].id;
+    }).catch(err => console.error("Cannot get cameras:", err));
 
-    document.getElementById("cameraSelect").addEventListener("change", (e) => {
+    // เลือกกล้อง
+    document.getElementById("cameraSelect").addEventListener("change", async (e) => {
       currentCameraId = e.target.value;
-    });
-
-    document.getElementById("startBtn").addEventListener("click", () => {
-      if(currentCameraId) {
-        if(!html5QrcodeScanner){
-          html5QrcodeScanner = new Html5Qrcode("reader");
-        }
-        html5QrcodeScanner.start(
-          currentCameraId,
-          { fps: 60, qrbox: 280 },
-          onScanSuccess,
-          onScanFailure
-        ).catch(err => console.error(err));
+      if(html5QrcodeScanner) {
+        await html5QrcodeScanner.stop();
+        html5QrcodeScanner.clear();
+        html5QrcodeScanner = null;
       }
     });
 
-    document.getElementById("stopBtn").addEventListener("click", () => {
-      if(html5QrcodeScanner){
-        html5QrcodeScanner.stop().then(() => {
-          console.log("Scanner stopped.");
-        }).catch(err => console.error(err));
+    // ปุ่ม start
+    document.getElementById("startBtn").addEventListener("click", async () => {
+      if(!currentCameraId) return alert("No camera selected");
+      if(!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start(
+        currentCameraId,
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        onScanFailure
+      ).catch(err => console.error("Start failed:", err));
+    });
+
+    // ปุ่ม stop
+    document.getElementById("stopBtn").addEventListener("click", async () => {
+      if(html5QrcodeScanner) {
+        await html5QrcodeScanner.stop().catch(err => console.error(err));
+        html5QrcodeScanner.clear();
+        html5QrcodeScanner = null;
+        console.log("Scanner stopped");
       }
     });
   </script>
